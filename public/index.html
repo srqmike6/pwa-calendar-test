@@ -1,132 +1,114 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>PWA Calendar Test</title>
-  <link rel="manifest" href="manifest.json">
-  <!-- iOS Support tags -->
+  <title>PWA Roster Calendar</title>
+  <link rel="manifest" href="/manifest.json">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="CalTest">
-  <link rel="apple-touch-icon" href="https://flaticon.com">
-
+  
   <style>
     body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-      margin: 0;
-      padding: 0;
-      background-color: #f0f2f5;
-      display: flex;
-      flex-direction: column;
-      height: 100vh;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      margin: 0; padding: 0; background-color: #f0f2f5;
+      display: flex; flex-direction: column; height: 100vh; align-items: center; justify-content: center;
     }
-
-    header {
-      background-color: #1a73e8;
-      color: white;
-      padding: 15px;
-      text-align: center;
-      font-size: 1.2rem;
-      font-weight: bold;
+    .card {
+      background: white; padding: 30px; border-radius: 12px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.1); text-align: center;
+      width: 90%; max-width: 400px; box-sizing: border-box;
     }
-
-    .page {
-      display: none;
-      flex: 1;
-      padding: 20px;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      text-align: center;
+    .hidden { display: none !important; }
+    h2 { color: #1a73e8; margin-top: 0; }
+    input {
+      width: 100%; padding: 12px; margin: 10px 0;
+      border: 1px solid #ccc; border-radius: 6px; font-size: 1rem; box-sizing: border-box;
     }
-
-    .active {
-      display: flex;
-    }
-
     button {
-      background-color: #1a73e8;
-      color: white;
-      border: none;
-      padding: 12px 24px;
-      font-size: 1rem;
-      border-radius: 8px;
-      cursor: pointer;
-      margin-top: 15px;
+      background-color: #1a73e8; color: white; border: none;
+      width: 100%; padding: 12px; font-size: 1rem; border-radius: 6px; cursor: pointer;
     }
-
-    iframe {
-      width: 100%;
-      max-width: 800px;
-      height: 500px;
-      border: none;
-      border-radius: 8px;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-    }
-
-    #ios-prompt {
-      display: none;
-      position: fixed;
-      bottom: 20px;
-      left: 20px;
-      right: 20px;
-      background: white;
-      padding: 15px;
-      border-radius: 12px;
-      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
-      font-size: 0.9rem;
-      border-left: 5px solid #1a73e8;
-    }
+    .error { color: #d93025; margin-top: 10px; font-size: 0.9rem; }
+    iframe { width: 100%; max-width: 800px; height: 600px; border: none; border-radius: 8px; }
   </style>
 </head>
-
 <body>
 
-  <header>Calendar App Test</header>
-
-  <!-- Page 1: Landing Page -->
-  <div id="landing-page" class="page active">
-    <h2>Welcome to the App Portal</h2>
-    <p>This is a test of a containerizable web application link.</p>
-    <button onclick="navigateTo('calendar-page')">View Calendar</button>
+  <!-- STEP 1: EMAIL ENTRY VIEW -->
+  <div id="email-view" class="card">
+    <h2>Roster Verification</h2>
+    <p>Enter your official medical inbox address to access the app schedule.</p>
+    <input type="email" id="email-input" placeholder="name.lastname@health.mil">
+    <button onclick="requestPin()">Request Access PIN</button>
+    <div id="email-error" class="error"></div>
   </div>
 
-  <!-- Page 2: Calendar Viewer -->
-  <div id="calendar-page" class="page">
+  <!-- STEP 2: PIN ENTRY VIEW -->
+  <div id="pin-view" class="card hidden">
+    <h2>Enter Verification PIN</h2>
+    <p>Type the 6-digit access code sent to your official inbox.</p>
+    <input type="text" id="pin-input" placeholder="000000" maxlength="6">
+    <button onclick="verifyPin()">Verify & Open App</button>
+    <div id="pin-error" class="error"></div>
+  </div>
+
+  <!-- STEP 3: MAIN CALENDAR INTERFACE VIEW -->
+  <div id="calendar-view" class="hidden" style="width: 100%; display: flex; flex-direction: column; align-items: center; padding: 20px;">
     <h2>Upcoming Events</h2>
-    <!-- WE WILL PASTE YOUR GOOGLE EMBED CODE DIRECTLY HERE IN THE NEXT STEP -->
-    <iframe
-      src="https://calendar.google.com/calendar/embed?src=46e464b4dd924e3d96a2408978ba9abf6290b717bf3006e0bc4cabb0ef3bd150%40group.calendar.google.com&ctz=Europe%2FBerlin"
-      style="border: 0" width="800" height="600" frameborder="0" scrolling="no"></iframe>
-    <button onclick="navigateTo('landing-page')">Go Back</button>
-  </div>
-
-  <!-- In-App iOS Installation Prompt -->
-  <div id="ios-prompt">
-    📱 <strong>Install This App:</strong> Tap the <strong>Share</strong> icon below in Safari, then select <strong>'Add
-      to Home Screen'</strong> to use this full-screen.
+    <!-- YOUR CALENDAR GRID LINK -->
+    <iframe src="https://google.com"></iframe>
   </div>
 
   <script>
-    function navigateTo(pageId) {
-      document.querySelectorAll('.page').forEach(page => page.classList.remove('active'));
-      document.getElementById(pageId).classList.add('active');
+    let savedEmail = '';
+
+    // A. Request pin code from your server engine
+    async function requestPin() {
+      const emailInput = document.getElementById('email-input').value;
+      const errorDiv = document.getElementById('email-error');
+      errorDiv.innerText = '';
+
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: emailInput })
+      });
+
+      const data = await response.json();
+      if (data.success) {
+        savedEmail = emailInput;
+        document.getElementById('email-view').classList.add('hidden');
+        document.getElementById('pin-view').classList.remove('hidden');
+      } else {
+        errorDiv.innerText = data.message;
+      }
     }
 
-    // PWA Requirement: Register a basic Service Worker background file
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('/sw.js').catch(() => { });
-    }
+    // B. Verify pin and retrieve secure token block
+    async function verifyPin() {
+      const pinInput = document.getElementById('pin-input').value;
+      const errorDiv = document.getElementById('pin-error');
+      errorDiv.innerText = '';
 
-    // Detect if running on iOS outside of standalone mode to show the install prompt
-    const isIos = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
-    const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
-    if (isIos && !isStandalone) {
-      document.getElementById('ios-prompt').style.display = 'block';
+      const response = await fetch('/api/auth/verify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: savedEmail, pin: pinInput })
+      });
+
+      const data = await response.json();
+      if (data.success) {
+        // Save the access token token safely in phone browser memory
+        localStorage.setItem('app_token', data.token);
+        
+        document.getElementById('pin-view').classList.add('hidden');
+        document.getElementById('calendar-view').classList.remove('hidden');
+      } else {
+        errorDiv.innerText = data.message;
+      }
     }
   </script>
 </body>
-
 </html>
