@@ -1,10 +1,15 @@
-FROM nginx:alpine
+FROM node:18-alpine
 
-# Copy your three local assets into the web server's public folder
-COPY index.html /usr/share/nginx/html/index.html
-COPY manifest.json /usr/share/nginx/html/manifest.json
-COPY sw.js /usr/share/nginx/html/sw.js
+WORKDIR /usr/src/app
+
+# Copy package configurations first to optimize build caching
+COPY package*.json ./
+RUN npm install --only=production
+
+# Copy the server script and your public frontend assets
+COPY server.js ./
+COPY public/ ./public/
 
 EXPOSE 80
 
-CMD ["nginx", "-g", "daemon off;"]
+CMD [ "node", "server.js" ]
