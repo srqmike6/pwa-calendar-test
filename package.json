@@ -1,0 +1,12 @@
+{
+  "name": "pwa-calendar-backend",
+  "version": "1.0.0",
+  "description": "Containerized PWA Calendar Server with Roster Access",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.19.2"
+  }
+}
