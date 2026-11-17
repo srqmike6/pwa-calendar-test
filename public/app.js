@@ -1,38 +1,193 @@
+
+const KEY = "mach_sfrg_events";
+let events = JSON.parse(localStorage.getItem(KEY) || "[]");
+let currentMonth = new Date();
+
 const $ = id => document.getElementById(id);
-const state = { token: localStorage.getItem('mrb_token'), email: '', isAdmin: false, events: [], category: 'All', month: new Date(new Date().getFullYear(), new Date().getMonth(), 1) };
-const categories = ['All','Community','Morale','Family','Training','Volunteer','Other'];
-const authHeaders = () => ({ 'Content-Type':'application/json', ...(state.token ? { Authorization:`Bearer ${state.token}` } : {}) });
-async function api(url, options={}) {
-  const response = await fetch(url, { ...options, headers:{...authHeaders(), ...(options.headers||{})} });
-  const data = await response.json().catch(()=>({}));
-  if (response.status === 401) { logout(false); throw new Error(data.error || 'Please sign in again.'); }
-  if (!response.ok) throw new Error(data.error || 'Request failed.');
-  return data;
+
+function save() {
+  localStorage.setItem(KEY, JSON.stringify(events));
 }
-function toast(message) { const el=$('toast'); el.textContent=message; el.classList.add('show'); setTimeout(()=>el.classList.remove('show'),2600); }
-function showMessage(message, error=false) { $('loginMessage').textContent=message; $('loginMessage').style.color=error?'#a94747':'var(--teal-dark)'; }
-function setSignedIn(on) { $('loginPanel').classList.toggle('hidden',on); $('appContent').classList.toggle('hidden',!on); $('logoutBtn').classList.toggle('hidden',!on); $('signedInAs').textContent=on?state.email:''; document.querySelectorAll('.admin-only').forEach(el=>el.classList.toggle('hidden',!on||!state.isAdmin)); }
-async function requestCode(e) { e.preventDefault(); try { const data=await api('/api/auth/login',{method:'POST',body:JSON.stringify({email:$('loginEmail').value})}); showMessage(data.message); $('requestCodeForm').classList.add('hidden'); $('verifyCodeForm').classList.remove('hidden'); } catch(err){showMessage(err.message,true);} }
-async function verifyCode(e) { e.preventDefault(); try { const data=await api('/api/auth/verify',{method:'POST',body:JSON.stringify({email:$('loginEmail').value,pin:$('loginPin').value})}); state.token=data.token;state.email=data.email;localStorage.setItem('mrb_token',data.token);await loadApp(); } catch(err){showMessage(err.message,true);} }
-async function logout(callApi=true) { if(callApi&&state.token) fetch('/api/auth/logout',{method:'POST',headers:authHeaders()}).catch(()=>{}); state.token=null;state.email='';state.isAdmin=false;localStorage.removeItem('mrb_token');setSignedIn(false);$('requestCodeForm').classList.remove('hidden');$('verifyCodeForm').classList.add('hidden');$('loginPin').value=''; }
-async function loadApp() { const me=await api('/api/auth/me');state.email=me.email;state.isAdmin=me.isAdmin;setSignedIn(true);await loadEvents();if(state.isAdmin)await loadUsers(); }
-async function loadEvents() { state.events=await api('/api/events');render(); }
-function filteredEvents() { const q=$('searchInput').value.toLowerCase().trim();return state.events.filter(ev=>(state.category==='All'||ev.category===state.category)&&(!q||[ev.title,ev.description,ev.location,ev.category].join(' ').toLowerCase().includes(q))); }
-function dateOf(value) { return new Date(value); }
-function fmtDate(value,opts={month:'short',day:'numeric',year:'numeric'}) { return dateOf(value).toLocaleDateString(undefined,opts); }
-function fmtTime(value) { return dateOf(value).toLocaleTimeString(undefined,{hour:'numeric',minute:'2-digit'}); }
-function renderFilters() { $('categoryFilters').innerHTML=categories.map(c=>`<button class="filter-chip ${state.category===c?'active':''}" data-category="${c}">${c}</button>`).join(''); }
-function renderFeatured(events) { const ev=events.find(x=>x.featured)||events[0];const box=$('featuredEvent');if(!ev){box.className='featured-card empty-state';box.textContent='No featured event yet. Check back soon.';return;}box.className='featured-card';box.innerHTML=`<div class="featured-image" style="${ev.image_url?`background-image:url('${safeAttr(ev.image_url)}')`:''}"></div><div class="featured-copy"><span class="event-category">${esc(ev.category)} · FEATURED</span><h3>${esc(ev.title)}</h3><p>${esc(ev.description||'Join us for this upcoming MACH SFRG event.')}</p><div class="event-meta"><span>◷ ${fmtDate(ev.starts_at)} · ${fmtTime(ev.starts_at)}</span><span>⌖ ${esc(ev.location||'Location to be announced')}</span></div></div>`; }
-function renderCalendar(events) { const y=state.month.getFullYear(),m=state.month.getMonth();$('monthLabel').textContent=state.month.toLocaleDateString(undefined,{month:'long',year:'numeric'});const first=new Date(y,m,1),start=new Date(y,m,1-first.getDay());const today=new Date();let html='';for(let i=0;i<42;i++){const d=new Date(start);d.setDate(start.getDate()+i);const key=`${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;const matches=events.filter(ev=>{const x=dateOf(ev.starts_at);return x.getFullYear()===d.getFullYear()&&x.getMonth()===d.getMonth()&&x.getDate()===d.getDate();});html+=`<div class="day ${d.getMonth()!==m?'other':''} ${d.toDateString()===today.toDateString()?'today':''}"><div class="day-number">${d.getDate()}</div><div class="day-events">${matches.slice(0,2).map(ev=>`<div class="day-event" title="${safeAttr(ev.title)}">${esc(ev.title)}</div>`).join('')}${matches.length>2?`<div class="day-event">+${matches.length-2} more</div>`:''}</div></div>`;} $('calendarGrid').innerHTML=html; }
-function renderList(events) { const future=events.filter(e=>dateOf(e.starts_at)>=new Date(new Date().setHours(0,0,0,0))).sort((a,b)=>dateOf(a.starts_at)-dateOf(b.starts_at));$('eventCount').textContent=`${future.length} event${future.length===1?'':'s'}`;if(!future.length){$('eventList').innerHTML='<div class="empty-state">No matching upcoming events. Try another filter or add an event.</div>';return;}$('eventList').innerHTML=future.map(ev=>{const d=dateOf(ev.starts_at);return `<article class="event-card"><div class="date-tile"><b>${d.getDate()}</b><span>${d.toLocaleDateString(undefined,{month:'short'})}</span></div><div class="event-info"><span class="event-category">${esc(ev.category)}</span><h3>${esc(ev.title)}</h3><p>${fmtDate(ev.starts_at,{weekday:'short',month:'short',day:'numeric'})} · ${fmtTime(ev.starts_at)} · ${esc(ev.location||'Location TBD')}</p></div>${state.isAdmin?`<div class="event-actions"><button class="small-action" data-edit="${ev.id}">Edit</button></div>`:''}</article>`;}).join(''); }
-function render() { const events=filteredEvents();renderFilters();renderFeatured(events);renderCalendar(events);renderList(events); }
-function esc(s) { return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
-function safeAttr(s) { return esc(s).replace(/javascript:/gi,''); }
-function openEvent(ev=null) { $('eventForm').reset();$('eventId').value=ev?.id||'';$('dialogTitle').textContent=ev?'Edit event':'Add event';$('eventTitle').value=ev?.title||'';$('eventDescription').value=ev?.description||'';$('eventCategory').value=ev?.category||'Community';$('eventStartsAt').value=ev?toLocalInput(ev.starts_at):'';$('eventEndsAt').value=ev?.ends_at?toLocalInput(ev.ends_at):'';$('eventLocation').value=ev?.location||'';$('eventImage').value=ev?.image_url||'';$('eventFeatured').checked=Boolean(ev?.featured);$('deleteEventBtn').classList.toggle('hidden',!ev);$('eventDialog').showModal(); }
-function toLocalInput(value) { const d=dateOf(value);return new Date(d.getTime()-d.getTimezoneOffset()*60000).toISOString().slice(0,16); }
-async function saveEvent(e) { e.preventDefault();const id=$('eventId').value;const payload={title:$('eventTitle').value,description:$('eventDescription').value,category:$('eventCategory').value,startsAt:new Date($('eventStartsAt').value).toISOString(),endsAt:$('eventEndsAt').value?new Date($('eventEndsAt').value).toISOString():null,location:$('eventLocation').value,imageUrl:$('eventImage').value,featured:$('eventFeatured').checked};try{await api(id?`/api/events/${id}`:'/api/events',{method:id?'PUT':'POST',body:JSON.stringify(payload)});$('eventDialog').close();await loadEvents();toast(id?'Event updated':'Event added');}catch(err){toast(err.message);}}
-async function deleteEvent() { const id=$('eventId').value;if(!id||!confirm('Delete this event? This cannot be undone.'))return;try{await api(`/api/events/${id}`,{method:'DELETE'});$('eventDialog').close();await loadEvents();toast('Event deleted');}catch(err){toast(err.message);}}
-async function loadUsers() { const users=await api('/api/admin/users');$('userList').innerHTML=users.map(u=>`<div class="user-row"><span>${esc(u.email)} ${u.is_admin?' · Admin':''}</span><button data-remove-user="${safeAttr(u.email)}">Remove</button></div>`).join('')||'<p class="muted">No authorized users.</p>'; }
-async function addUser(e) { e.preventDefault();try{await api('/api/admin/users',{method:'POST',body:JSON.stringify({email:$('newUserEmail').value,isAdmin:$('newUserAdmin').checked})});$('addUserForm').reset();await loadUsers();toast('Authorized user added');}catch(err){toast(err.message);}}
-$('requestCodeForm').addEventListener('submit',requestCode);$('verifyCodeForm').addEventListener('submit',verifyCode);$('backToEmail').addEventListener('click',()=>{$('verifyCodeForm').classList.add('hidden');$('requestCodeForm').classList.remove('hidden');showMessage('');});$('logoutBtn').addEventListener('click',()=>logout());$('searchInput').addEventListener('input',render);$('categoryFilters').addEventListener('click',e=>{const b=e.target.closest('[data-category]');if(b){state.category=b.dataset.category;render();}});$('prevMonth').addEventListener('click',()=>{state.month.setMonth(state.month.getMonth()-1);renderCalendar(filteredEvents());});$('nextMonth').addEventListener('click',()=>{state.month.setMonth(state.month.getMonth()+1);renderCalendar(filteredEvents());});$('addEventBtn').addEventListener('click',()=>openEvent());$('eventForm').addEventListener('submit',saveEvent);$('closeDialog').addEventListener('click',()=>$('eventDialog').close());$('cancelEventBtn').addEventListener('click',()=>$('eventDialog').close());$('deleteEventBtn').addEventListener('click',deleteEvent);$('eventList').addEventListener('click',e=>{const b=e.target.closest('[data-edit]');if(b)openEvent(state.events.find(ev=>String(ev.id)===b.dataset.edit));});$('addUserForm').addEventListener('submit',addUser);$('userList').addEventListener('click',async e=>{const b=e.target.closest('[data-remove-user]');if(!b||!confirm(`Remove ${b.dataset.removeUser} from the access list?`))return;try{await api(`/api/admin/users/${encodeURIComponent(b.dataset.removeUser)}`,{method:'DELETE'});await loadUsers();toast('User removed');}catch(err){toast(err.message);}});
-if(state.token)loadApp().catch(err=>{toast(err.message);logout(false);});
+
+function dateText(date) {
+  return new Date(date + "T12:00:00").toLocaleDateString();
+}
+
+function escapeHTML(value = "") {
+  return String(value).replace(/[&<>"']/g, c => ({
+    "&": "&amp;", "<": "&lt;", ">": "&gt;",
+    '"': "&quot;", "'": "&#39;"
+  })[c]);
+}
+
+function showView(name) {
+  document.querySelectorAll(".view").forEach(v => {
+    v.hidden = v.id !== name;
+  });
+
+  if (name === "calendar") renderCalendar();
+  if (name === "events") renderEvents();
+  if (name === "dashboard") renderDashboard();
+}
+
+document.querySelectorAll("[data-view]").forEach(button => {
+  button.onclick = () => showView(button.dataset.view);
+});
+
+function eventHTML(e) {
+  return `
+    <article class="event-card">
+      <h3>${escapeHTML(e.name)}</h3>
+      <p>${escapeHTML(e.category)} · ${dateText(e.date)}</p>
+      <p>${escapeHTML(e.time)} · ${escapeHTML(e.location)}</p>
+      <p>${escapeHTML(e.description)}</p>
+      <button onclick="editEvent('${e.id}')">Edit</button>
+      <button onclick="deleteEvent('${e.id}')">Delete</button>
+    </article>`;
+}
+
+function renderDashboard() {
+  const upcoming = events
+    .filter(e => e.date >= new Date().toISOString().slice(0, 10))
+    .sort((a,b) => a.date.localeCompare(b.date));
+
+  $("upcoming").innerHTML = upcoming.length
+    ? upcoming.map(eventHTML).join("")
+    : "<p>No upcoming events. Add your first event!</p>";
+}
+
+function renderEvents() {
+  const query = $("search").value.toLowerCase();
+  const category = $("filter").value;
+
+  const filtered = events.filter(e =>
+    (category === "All" || e.category === category) &&
+    (e.name + e.description + e.location).toLowerCase().includes(query)
+  );
+
+  $("eventList").innerHTML = filtered.length
+    ? filtered.map(eventHTML).join("")
+    : "<p>No matching events.</p>";
+}
+
+function openForm(event = null) {
+  $("eventForm").reset();
+  $("eventId").value = event?.id || "";
+  $("formTitle").textContent = event ? "Edit Event" : "Add Event";
+
+  if (event) {
+    $("name").value = event.name;
+    $("category").value = event.category;
+    $("date").value = event.date;
+    $("time").value = event.time;
+    $("location").value = event.location;
+    $("description").value = event.description;
+  }
+
+  $("eventDialog").showModal();
+}
+
+$("addEvent").onclick = () => openForm();
+$("cancel").onclick = () => $("eventDialog").close();
+
+$("eventForm").onsubmit = e => {
+  e.preventDefault();
+
+  const id = $("eventId").value || crypto.randomUUID();
+
+  const event = {
+    id,
+    name: $("name").value.trim(),
+    category: $("category").value,
+    date: $("date").value,
+    time: $("time").value,
+    location: $("location").value.trim(),
+    description: $("description").value.trim()
+  };
+
+  const index = events.findIndex(e => e.id === id);
+
+  if (index >= 0) events[index] = event;
+  else events.push(event);
+
+  save();
+  $("eventDialog").close();
+  refresh();
+};
+
+function editEvent(id) {
+  const event = events.find(e => e.id === id);
+  if (event) openForm(event);
+}
+
+function deleteEvent(id) {
+  if (!confirm("Delete this event?")) return;
+
+  events = events.filter(e => e.id !== id);
+  save();
+  refresh();
+}
+
+$("search").oninput = renderEvents;
+$("filter").onchange = renderEvents;
+
+function renderCalendar() {
+  const year = currentMonth.getFullYear();
+  const month = currentMonth.getMonth();
+
+  $("month").textContent = currentMonth.toLocaleDateString(
+    undefined, { month: "long", year: "numeric" }
+  );
+
+  const firstDay = new Date(year, month, 1).getDay();
+  const days = new Date(year, month + 1, 0).getDate();
+
+  const weekdays = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
+
+  let html = weekdays.map(d =>
+    `<div class="calendar-day"><strong>${d}</strong></div>`
+  ).join("");
+
+  for (let i = 0; i < firstDay; i++) {
+    html += `<div class="calendar-day"></div>`;
+  }
+
+  for (let day = 1; day <= days; day++) {
+    const date = [
+      year,
+      String(month + 1).padStart(2, "0"),
+      String(day).padStart(2, "0")
+    ].join("-");
+
+    const dayEvents = events.filter(e => e.date === date);
+
+    html += `
+      <div class="calendar-day">
+        <strong>${day}</strong>
+        ${dayEvents.map(e =>
+          `<div class="calendar-event">${escapeHTML(e.name)}</div>`
+        ).join("")}
+      </div>`;
+  }
+
+  $("calendarGrid").innerHTML = html;
+}
+
+$("previous").onclick = () => {
+  currentMonth.setMonth(currentMonth.getMonth() - 1);
+  renderCalendar();
+};
+
+$("next").onclick = () => {
+  currentMonth.setMonth(currentMonth.getMonth() + 1);
+  renderCalendar();
+};
+
+function refresh() {
+  renderDashboard();
+  renderEvents();
+  renderCalendar();
+}
+
+refresh();
+showView("dashboard");
