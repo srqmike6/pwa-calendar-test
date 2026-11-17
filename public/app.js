@@ -1,193 +1,150 @@
+const STORAGE_KEY = "mach_sfrg_events";
+let currentMonth = new Date().getMonth();
+let currentYear = new Date().getFullYear();
 
-const KEY = "mach_sfrg_events";
-let events = JSON.parse(localStorage.getItem(KEY) || "[]");
-let currentMonth = new Date();
-
-const $ = id => document.getElementById(id);
-
-function save() {
-  localStorage.setItem(KEY, JSON.stringify(events));
-}
-
-function dateText(date) {
-  return new Date(date + "T12:00:00").toLocaleDateString();
-}
-
-function escapeHTML(value = "") {
-  return String(value).replace(/[&<>"']/g, c => ({
-    "&": "&amp;", "<": "&lt;", ">": "&gt;",
-    '"': "&quot;", "'": "&#39;"
-  })[c]);
-}
-
-function showView(name) {
-  document.querySelectorAll(".view").forEach(v => {
-    v.hidden = v.id !== name;
-  });
-
-  if (name === "calendar") renderCalendar();
-  if (name === "events") renderEvents();
-  if (name === "dashboard") renderDashboard();
-}
-
-document.querySelectorAll("[data-view]").forEach(button => {
-  button.onclick = () => showView(button.dataset.view);
-});
-
-function eventHTML(e) {
-  return `
-    <article class="event-card">
-      <h3>${escapeHTML(e.name)}</h3>
-      <p>${escapeHTML(e.category)} · ${dateText(e.date)}</p>
-      <p>${escapeHTML(e.time)} · ${escapeHTML(e.location)}</p>
-      <p>${escapeHTML(e.description)}</p>
-      <button onclick="editEvent('${e.id}')">Edit</button>
-      <button onclick="deleteEvent('${e.id}')">Delete</button>
-    </article>`;
-}
-
-function renderDashboard() {
-  const upcoming = events
-    .filter(e => e.date >= new Date().toISOString().slice(0, 10))
-    .sort((a,b) => a.date.localeCompare(b.date));
-
-  $("upcoming").innerHTML = upcoming.length
-    ? upcoming.map(eventHTML).join("")
-    : "<p>No upcoming events. Add your first event!</p>";
-}
-
-function renderEvents() {
-  const query = $("search").value.toLowerCase();
-  const category = $("filter").value;
-
-  const filtered = events.filter(e =>
-    (category === "All" || e.category === category) &&
-    (e.name + e.description + e.location).toLowerCase().includes(query)
-  );
-
-  $("eventList").innerHTML = filtered.length
-    ? filtered.map(eventHTML).join("")
-    : "<p>No matching events.</p>";
-}
-
-function openForm(event = null) {
-  $("eventForm").reset();
-  $("eventId").value = event?.id || "";
-  $("formTitle").textContent = event ? "Edit Event" : "Add Event";
-
-  if (event) {
-    $("name").value = event.name;
-    $("category").value = event.category;
-    $("date").value = event.date;
-    $("time").value = event.time;
-    $("location").value = event.location;
-    $("description").value = event.description;
+const $ = (id) => document.getElementById(id);
+function loadEvents() {
+  try {
+    const value = JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
+    return Array.isArray(value) ? value : [];
+  } catch {
+    return [];
   }
-
+}
+function saveEvents(events) {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(events));
+}
+function escapeHTML(value) {
+  return String(value ?? "").replace(/[&<>"']/g, (char) => ({
+    "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
+  })[char]);
+}
+function parseDate(value) { return new Date(`${value}T12:00:00`); }
+function formatDate(value) {
+  return value ? parseDate(value).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" }) : "Date to be announced";
+}
+function showView(view) {
+  document.querySelectorAll(".view").forEach((section) => { section.hidden = section.id !== view; });
+  document.querySelectorAll(".nav-link").forEach((button) => button.classList.toggle("active", button.dataset.view === view));
+  if (view === "calendar") renderCalendar();
+  if (view === "events") renderEvents();
+}
+function openEventDialog(id = "") {
+  $("eventForm").reset();
+  $("eventId").value = "";
+  $("dialogTitle").textContent = "Add an Event";
+  if (id) {
+    const item = loadEvents().find((event) => event.id === id);
+    if (!item) return;
+    $("dialogTitle").textContent = "Edit Event";
+    $("eventId").value = item.id;
+    $("eventName").value = item.name || "";
+    $("eventDate").value = item.date || "";
+    $("eventTime").value = item.time || "";
+    $("eventCategory").value = item.category || "Community";
+    $("eventLocation").value = item.location || "";
+    $("eventDescription").value = item.description || "";
+  }
   $("eventDialog").showModal();
 }
-
-$("addEvent").onclick = () => openForm();
-$("cancel").onclick = () => $("eventDialog").close();
-
-$("eventForm").onsubmit = e => {
-  e.preventDefault();
-
-  const id = $("eventId").value || crypto.randomUUID();
-
-  const event = {
-    id,
-    name: $("name").value.trim(),
-    category: $("category").value,
-    date: $("date").value,
-    time: $("time").value,
-    location: $("location").value.trim(),
-    description: $("description").value.trim()
-  };
-
-  const index = events.findIndex(e => e.id === id);
-
-  if (index >= 0) events[index] = event;
-  else events.push(event);
-
-  save();
-  $("eventDialog").close();
-  refresh();
-};
-
-function editEvent(id) {
-  const event = events.find(e => e.id === id);
-  if (event) openForm(event);
-}
-
+function closeEventDialog() { $("eventDialog").close(); }
 function deleteEvent(id) {
-  if (!confirm("Delete this event?")) return;
-
-  events = events.filter(e => e.id !== id);
-  save();
+  if (!window.confirm("Delete this event?")) return;
+  saveEvents(loadEvents().filter((event) => event.id !== id));
   refresh();
 }
-
-$("search").oninput = renderEvents;
-$("filter").onchange = renderEvents;
-
+function eventCard(item) {
+  return `<article class="event-card"><div class="event-card-top"></div><div class="event-card-body">
+    <span class="event-date">${escapeHTML(item.category || "Event")} · ${escapeHTML(formatDate(item.date))}</span>
+    <h3>${escapeHTML(item.name)}</h3><p>${escapeHTML(item.description || "Join us for this community event.")}</p>
+    <div class="event-meta"><span>◷ ${escapeHTML(item.time || "Time to be announced")}</span><span>⌖ ${escapeHTML(item.location || "Location to be announced")}</span></div>
+    </div><div class="event-card-actions"><button class="small-button" data-action="edit" data-id="${escapeHTML(item.id)}">Edit</button><button class="small-button delete" data-action="delete" data-id="${escapeHTML(item.id)}">Delete</button></div></article>`;
+}
+function renderDashboard() {
+  const events = loadEvents();
+  const today = new Date(); today.setHours(0, 0, 0, 0);
+  const upcoming = events.filter((item) => item.date && parseDate(item.date) >= today).sort((a, b) => a.date.localeCompare(b.date));
+  $("totalCount").textContent = events.length;
+  $("upcomingCount").textContent = upcoming.length;
+  $("categoryCount").textContent = new Set(events.map((item) => item.category).filter(Boolean)).size;
+  $("featuredEmpty").hidden = upcoming.length > 0;
+  $("dashboardEvents").innerHTML = upcoming.slice(0, 3).map(eventCard).join("");
+}
+function renderEvents() {
+  const query = ($("searchInput")?.value || "").toLowerCase();
+  const category = $("categoryFilter")?.value || "";
+  const events = loadEvents().filter((item) => {
+    const text = [item.name, item.description, item.location].join(" ").toLowerCase();
+    return text.includes(query) && (!category || item.category === category);
+  }).sort((a, b) => (a.date || "").localeCompare(b.date || ""));
+  $("allEvents").innerHTML = events.length ? events.map(eventCard).join("") : `<div class="empty-state">No events match your search. Try another filter or add an event.</div>`;
+}
+function changeMonth(amount) {
+  currentMonth += amount;
+  if (currentMonth < 0) { currentMonth = 11; currentYear--; }
+  if (currentMonth > 11) { currentMonth = 0; currentYear++; }
+  renderCalendar();
+}
 function renderCalendar() {
-  const year = currentMonth.getFullYear();
-  const month = currentMonth.getMonth();
-
-  $("month").textContent = currentMonth.toLocaleDateString(
-    undefined, { month: "long", year: "numeric" }
-  );
-
-  const firstDay = new Date(year, month, 1).getDay();
-  const days = new Date(year, month + 1, 0).getDate();
-
-  const weekdays = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
-
-  let html = weekdays.map(d =>
-    `<div class="calendar-day"><strong>${d}</strong></div>`
-  ).join("");
-
-  for (let i = 0; i < firstDay; i++) {
-    html += `<div class="calendar-day"></div>`;
+  const grid = $("calendarGrid");
+  if (!grid) return;
+  $("monthLabel").textContent = new Date(currentYear, currentMonth, 1).toLocaleDateString(undefined, { month: "long", year: "numeric" });
+  const names = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+  let html = names.map((name) => `<div class="calendar-day-name">${name}</div>`).join("");
+  const firstDay = new Date(currentYear, currentMonth, 1).getDay();
+  const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+  const previousMonthDays = new Date(currentYear, currentMonth, 0).getDate();
+  const events = loadEvents();
+  const today = new Date();
+  for (let cell = 0; cell < 42; cell++) {
+    let day, date, muted = false;
+    if (cell < firstDay) { day = previousMonthDays - firstDay + cell + 1; date = new Date(currentYear, currentMonth - 1, day); muted = true; }
+    else if (cell >= firstDay + daysInMonth) { day = cell - firstDay - daysInMonth + 1; date = new Date(currentYear, currentMonth + 1, day); muted = true; }
+    else { day = cell - firstDay + 1; date = new Date(currentYear, currentMonth, day); }
+    const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+    const isToday = date.toDateString() === today.toDateString();
+    const matches = events.filter((item) => item.date === key);
+    html += `<div class="calendar-day ${muted ? "muted-day" : ""} ${isToday ? "today" : ""}"><strong>${day}</strong>${matches.map((item) => `<span class="calendar-event" title="${escapeHTML(item.name)}">${escapeHTML(item.name)}</span>`).join("")}</div>`;
   }
-
-  for (let day = 1; day <= days; day++) {
-    const date = [
-      year,
-      String(month + 1).padStart(2, "0"),
-      String(day).padStart(2, "0")
-    ].join("-");
-
-    const dayEvents = events.filter(e => e.date === date);
-
-    html += `
-      <div class="calendar-day">
-        <strong>${day}</strong>
-        ${dayEvents.map(e =>
-          `<div class="calendar-event">${escapeHTML(e.name)}</div>`
-        ).join("")}
-      </div>`;
-  }
-
-  $("calendarGrid").innerHTML = html;
+  grid.innerHTML = html;
 }
+function refresh() { renderDashboard(); renderEvents(); renderCalendar(); }
 
-$("previous").onclick = () => {
-  currentMonth.setMonth(currentMonth.getMonth() - 1);
-  renderCalendar();
-};
-
-$("next").onclick = () => {
-  currentMonth.setMonth(currentMonth.getMonth() + 1);
-  renderCalendar();
-};
-
-function refresh() {
-  renderDashboard();
-  renderEvents();
-  renderCalendar();
-}
-
+// Navigation and event actions are delegated so text entered by users is never run as script.
+document.querySelectorAll("[data-view]").forEach((button) => button.addEventListener("click", () => showView(button.dataset.view)));
+document.querySelectorAll("[data-view-link]").forEach((link) => link.addEventListener("click", (event) => { event.preventDefault(); showView(link.dataset.viewLink); }));
+["addEventTop", "addFirstEvent", "addEventPage", "addEventCalendar"].forEach((id) => $(id).addEventListener("click", () => openEventDialog()));
+$("closeDialog").addEventListener("click", closeEventDialog);
+$("cancelDialog").addEventListener("click", closeEventDialog);
+$("previousMonth").addEventListener("click", () => changeMonth(-1));
+$("nextMonth").addEventListener("click", () => changeMonth(1));
+$("searchInput").addEventListener("input", renderEvents);
+$("categoryFilter").addEventListener("change", renderEvents);
+document.addEventListener("click", (event) => {
+  const button = event.target.closest("button[data-action]");
+  if (!button) return;
+  const id = button.dataset.id;
+  if (button.dataset.action === "edit") openEventDialog(id);
+  if (button.dataset.action === "delete") deleteEvent(id);
+});
+$("eventForm").addEventListener("submit", (event) => {
+  event.preventDefault();
+  const id = $("eventId").value || (window.crypto?.randomUUID ? crypto.randomUUID() : String(Date.now()));
+  const item = {
+    id,
+    name: $("eventName").value.trim(),
+    date: $("eventDate").value,
+    time: $("eventTime").value,
+    category: $("eventCategory").value,
+    location: $("eventLocation").value.trim(),
+    description: $("eventDescription").value.trim()
+  };
+  const events = loadEvents();
+  const index = events.findIndex((existing) => existing.id === id);
+  if (index >= 0) events[index] = item; else events.push(item);
+  events.sort((a, b) => (a.date || "").localeCompare(b.date || ""));
+  saveEvents(events);
+  closeEventDialog();
+  refresh();
+});
 refresh();
-showView("dashboard");

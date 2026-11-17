@@ -1,49 +1,107 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#e8f0f4"><title>MACH SFRG · Events & Calendar</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Montserrat:wght@600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/styles.css">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#102b46">
+  <title>MACH SFRG Events</title>
+  <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-  <main class="shell">
+  <div class="app-shell">
     <header class="topbar">
-      <div class="brand"><div class="crest" aria-label="MACH crest placeholder">M<br><small>ACH</small></div><div><div class="brand-name">MACH SFRG</div><div class="brand-sub">Events &amp; calendar</div><div class="tagline">SFRG gatherings · morale · Army training</div></div></div>
-      <div class="account"><span id="signedInAs"></span><button id="logoutBtn" class="button button-light hidden">Sign out</button></div>
+      <a class="brand" href="#dashboard" aria-label="MACH SFRG home" data-view-link="dashboard">
+        <span class="brand-mark">M</span>
+        <span><strong>MACH SFRG</strong><small>EVENTS &amp; COMMUNITY</small></span>
+      </a>
+      <nav class="main-nav" aria-label="Main navigation">
+        <button class="nav-link active" data-view="dashboard">Dashboard</button>
+        <button class="nav-link" data-view="events">All Events</button>
+        <button class="nav-link" data-view="calendar">Calendar</button>
+      </nav>
+      <button class="primary-button top-add" id="addEventTop">＋ Add Event</button>
     </header>
 
-    <section id="loginPanel" class="login-panel">
-      <div><p class="eyebrow">WELCOME</p><h1>Stay connected.</h1><p class="muted">Sign in with your approved email address to view and manage MACH SFRG events.</p></div>
-      <form id="requestCodeForm" class="login-form"><label for="loginEmail">Official email address</label><input id="loginEmail" type="email" autocomplete="email" placeholder="name@health.mil" required><button class="button" type="submit">Email me a sign-in code</button></form>
-      <form id="verifyCodeForm" class="login-form hidden"><label for="loginPin">Six-digit verification code</label><input id="loginPin" inputmode="numeric" maxlength="6" pattern="[0-9]{6}" placeholder="123456" required><button class="button" type="submit">Verify and sign in</button><button id="backToEmail" type="button" class="text-button">Use a different email</button></form>
-      <p id="loginMessage" class="message" role="status"></p>
-    </section>
+    <main class="main-content">
+      <section id="dashboard" class="view">
+        <div class="welcome-row">
+          <div>
+            <p class="eyebrow">COMMUNITY CONNECTIONS</p>
+            <h1>Welcome to MACH SFRG Events</h1>
+            <p class="muted intro">Stay connected with upcoming events, activities, and opportunities to come together.</p>
+          </div>
+          <div class="welcome-icon" aria-hidden="true">✦</div>
+        </div>
 
-    <div id="appContent" class="hidden">
-      <section class="hero">
-        <div><p class="eyebrow">MARTIN ARMY COMMUNITY HOSPITAL</p><h1>Make time for<br><span>what brings us together.</span></h1><p>Find upcoming gatherings, family activities, morale events, and training opportunities.</p></div>
-        <div class="hero-mark"><div class="hero-mark-inner">MACH<br><small>SFRG</small></div></div>
+        <div class="stats-grid">
+          <article class="stat-card"><span class="stat-icon blue">▦</span><div><strong id="totalCount">0</strong><span>Total Events</span></div></article>
+          <article class="stat-card"><span class="stat-icon green">◷</span><div><strong id="upcomingCount">0</strong><span>Upcoming Events</span></div></article>
+          <article class="stat-card"><span class="stat-icon gold">♡</span><div><strong id="categoryCount">0</strong><span>Event Categories</span></div></article>
+        </div>
+
+        <div class="section-heading">
+          <div><p class="eyebrow">DON'T MISS OUT</p><h2>Upcoming Events</h2></div>
+          <button class="text-button" data-view="events">View all events →</button>
+        </div>
+        <div id="featuredEmpty" class="featured-empty">
+          <div class="empty-symbol">✦</div>
+          <h3>Your next great memory starts here</h3>
+          <p>No events have been added yet. Add an event to get the calendar started.</p>
+          <button class="primary-button" id="addFirstEvent">＋ Add your first event</button>
+        </div>
+        <div id="dashboardEvents" class="event-grid"></div>
       </section>
 
-      <section class="toolbar"><div class="search-wrap"><span>⌕</span><input id="searchInput" type="search" placeholder="Search events, locations, or keywords…"></div><button id="addEventBtn" class="button admin-only hidden">＋ Add event</button></section>
-      <nav id="categoryFilters" class="filters" aria-label="Filter events"></nav>
-
-      <section id="featuredSection" class="featured-section"><div class="section-heading"><div><p class="eyebrow">DON'T MISS OUT</p><h2>Featured event</h2></div></div><div id="featuredEvent" class="featured-card empty-state">No featured event yet. Check back soon.</div></section>
-
-      <section class="calendar-section">
-        <div class="section-heading"><div><p class="eyebrow">PLAN AHEAD</p><h2>Event calendar</h2></div><div class="calendar-controls"><button id="prevMonth" class="icon-button" aria-label="Previous month">‹</button><strong id="monthLabel"></strong><button id="nextMonth" class="icon-button" aria-label="Next month">›</button></div></div>
-        <div class="calendar-card"><div class="calendar-grid weekdays"><span>Sun</span><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span></div><div id="calendarGrid" class="calendar-grid"></div></div>
+      <section id="events" class="view" hidden>
+        <div class="page-heading">
+          <div><p class="eyebrow">WHAT'S HAPPENING</p><h1>All Events</h1><p class="muted">Browse upcoming activities and community events.</p></div>
+          <button class="primary-button" id="addEventPage">＋ Add Event</button>
+        </div>
+        <div class="filters">
+          <label class="search-box"><span>⌕</span><input id="searchInput" type="search" placeholder="Search events..." aria-label="Search events"></label>
+          <select id="categoryFilter" aria-label="Filter by category">
+            <option value="">All categories</option>
+            <option>Community</option><option>Family</option><option>Wellness</option><option>Volunteer</option><option>Holiday</option><option>Other</option>
+          </select>
+        </div>
+        <div id="allEvents" class="event-grid"></div>
       </section>
 
-      <section class="upcoming-section"><div class="section-heading"><div><p class="eyebrow">SAVE THE DATE</p><h2>Upcoming events</h2></div><span id="eventCount" class="count-pill">0 events</span></div><div id="eventList" class="event-list"></div></section>
-      <section id="adminUsersPanel" class="admin-panel admin-only hidden"><div class="section-heading"><div><p class="eyebrow">ACCESS CONTROL</p><h2>Authorized users</h2></div></div><form id="addUserForm" class="inline-form"><input id="newUserEmail" type="email" placeholder="name@health.mil" required><label class="check-label"><input id="newUserAdmin" type="checkbox"> Administrator</label><button class="button" type="submit">Add user</button></form><div id="userList" class="user-list"></div></section>
-    </div>
-    <footer>Martin Army Community Hospital · SFRG <span>For authorized community use</span></footer>
-  </main>
+      <section id="calendar" class="view" hidden>
+        <div class="page-heading">
+          <div><p class="eyebrow">PLAN AHEAD</p><h1>Event Calendar</h1><p class="muted">See what's coming up throughout the month.</p></div>
+          <button class="primary-button" id="addEventCalendar">＋ Add Event</button>
+        </div>
+        <div class="calendar-card">
+          <div class="calendar-toolbar">
+            <button class="icon-button" id="previousMonth" aria-label="Previous month">‹</button>
+            <h2 id="monthLabel"></h2>
+            <button class="icon-button" id="nextMonth" aria-label="Next month">›</button>
+          </div>
+          <div class="calendar-grid" id="calendarGrid"></div>
+        </div>
+      </section>
+    </main>
+    <footer>M A C H &nbsp; S F R G <span>Building connections. Strengthening community.</span></footer>
+  </div>
 
-  <dialog id="eventDialog"><form id="eventForm" method="dialog"><div class="dialog-heading"><div><p class="eyebrow">EVENT DETAILS</p><h2 id="dialogTitle">Add event</h2></div><button type="button" id="closeDialog" class="icon-button" aria-label="Close">×</button></div><input type="hidden" id="eventId"><label>Event title<input id="eventTitle" required maxlength="140"></label><label>Description<textarea id="eventDescription" rows="3"></textarea></label><div class="form-grid"><label>Category<select id="eventCategory"><option>Community</option><option>Morale</option><option>Family</option><option>Training</option><option>Volunteer</option><option>Other</option></select></label><label>Start date &amp; time<input id="eventStartsAt" type="datetime-local" required></label><label>End date &amp; time<input id="eventEndsAt" type="datetime-local"></label><label>Location<input id="eventLocation" maxlength="180"></label></div><label>Image URL (optional)<input id="eventImage" type="url" placeholder="https://…"></label><label class="check-label"><input id="eventFeatured" type="checkbox"> Feature this event</label><div class="dialog-actions"><button type="button" id="deleteEventBtn" class="button button-danger hidden">Delete</button><span></span><button type="button" id="cancelEventBtn" class="button button-light">Cancel</button><button type="submit" class="button">Save event</button></div></form></dialog>
-  <div id="toast" class="toast" role="status"></div>
-  <script src="/app.js" defer></script>
-</body></html>
+  <dialog id="eventDialog">
+    <form id="eventForm">
+      <div class="dialog-heading"><div><p class="eyebrow">COMMUNITY CALENDAR</p><h2 id="dialogTitle">Add an Event</h2></div><button type="button" class="close-button" id="closeDialog" aria-label="Close">×</button></div>
+      <input type="hidden" id="eventId">
+      <label>Event name<input id="eventName" required maxlength="100" placeholder="e.g. Family Fun Day"></label>
+      <div class="form-row">
+        <label>Date<input id="eventDate" type="date" required></label>
+        <label>Start time<input id="eventTime" type="time"></label>
+      </div>
+      <div class="form-row">
+        <label>Category<select id="eventCategory"><option>Community</option><option>Family</option><option>Wellness</option><option>Volunteer</option><option>Holiday</option><option>Other</option></select></label>
+        <label>Location<input id="eventLocation" maxlength="120" placeholder="Building / location"></label>
+      </div>
+      <label>Description<textarea id="eventDescription" rows="3" maxlength="1000" placeholder="Share event details..."></textarea></label>
+      <div class="dialog-actions"><button type="button" class="secondary-button" id="cancelDialog">Cancel</button><button type="submit" class="primary-button">Save Event</button></div>
+    </form>
+  </dialog>
+  <script src="app.js"></script>
+</body>
+</html>
