@@ -1,24 +1,36 @@
-MACH SFRG EVENTS - REPLACEMENT FILES
+MACH SFRG EVENTS - UPDATED REPLACEMENT FILES
 
-FILES IN THIS PACKAGE
+WHAT'S NEW
+- Add an event photo (JPG, PNG, or WebP). Photos are resized before saving.
+- Add an optional event sign-up / registration link.
+- Each event includes Text and Email sharing actions.
+- Each event includes Google Calendar and Apple Calendar options.
+- The home page now includes event search and the monthly calendar.
+- Removed the event-count summary cards from the home page.
+- Upcoming event cards on the home page display the event photo.
+- All Events continues to show both upcoming and past events.
+
+FILES
 - package.json
 - server.js
 - public/index.html
 - public/styles.css
 - public/app.js
 
-HOW TO INSTALL
+INSTALL
 1. Download and unzip this package.
-2. In your existing GitHub repository, replace the matching files with these files.
-3. Keep the public folder and put index.html, styles.css, and app.js inside it.
-4. Commit the changes and push them to the same GitHub repository.
-5. Render should redeploy from GitHub. The Render service should use the Node runtime,
-   build command `npm install`, and start command `npm start`.
+2. Copy package.json and server.js into the root of your existing GitHub repository, replacing the matching files.
+3. Copy the entire public folder into the root of your repository, replacing the existing public folder contents.
+4. Commit and push the changes to the same GitHub repository.
+5. Render should redeploy from GitHub. Keep the existing Node settings: build command `npm install`, start command `npm start`.
 
-IMPORTANT STORAGE NOTE
-This version stores events in the browser's localStorage. Events are saved only in the
-browser/device where they were entered. They are not shared across users or devices,
-and clearing browser data can remove them. There is no login or database in this
-starter version. Do not use it for sensitive or private event information.
+EXISTING EVENTS
+This update keeps the same browser storage key (`mach_sfrg_events`) as the previous version. Events already saved should remain available when you open the updated app using the same browser and the same app URL. The Home page shows events dated today or later. Older/past-dated events remain available under All Events.
+
+IMPORTANT STORAGE LIMITATION
+This version still stores events and compressed photos in the browser's localStorage. That means entries are only available in the browser/device where they were added. They are not shared across users or devices. Clearing browser data can remove them. There is no login or database in this version. Do not use it for sensitive or private event information.
+
+PHOTO STORAGE
+Photos are resized to a smaller JPEG before saving. If browser storage becomes full, the app will show an error and suggest using a smaller photo or removing older event photos.
 
 The /health endpoint returns a small JSON health check.

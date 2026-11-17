@@ -15,9 +15,8 @@
         <span><strong>MACH SFRG</strong><small>EVENTS &amp; COMMUNITY</small></span>
       </a>
       <nav class="main-nav" aria-label="Main navigation">
-        <button class="nav-link active" data-view="dashboard">Dashboard</button>
+        <button class="nav-link active" data-view="dashboard">Home</button>
         <button class="nav-link" data-view="events">All Events</button>
-        <button class="nav-link" data-view="calendar">Calendar</button>
       </nav>
       <button class="primary-button top-add" id="addEventTop">＋ Add Event</button>
     </header>
@@ -33,44 +32,25 @@
           <div class="welcome-icon" aria-hidden="true">✦</div>
         </div>
 
-        <div class="stats-grid">
-          <article class="stat-card"><span class="stat-icon blue">▦</span><div><strong id="totalCount">0</strong><span>Total Events</span></div></article>
-          <article class="stat-card"><span class="stat-icon green">◷</span><div><strong id="upcomingCount">0</strong><span>Upcoming Events</span></div></article>
-          <article class="stat-card"><span class="stat-icon gold">♡</span><div><strong id="categoryCount">0</strong><span>Event Categories</span></div></article>
-        </div>
-
-        <div class="section-heading">
+        <div class="section-heading upcoming-heading">
           <div><p class="eyebrow">DON'T MISS OUT</p><h2>Upcoming Events</h2></div>
           <button class="text-button" data-view="events">View all events →</button>
         </div>
+        <label class="search-box home-search">
+          <span aria-hidden="true">⌕</span>
+          <input id="dashboardSearch" type="search" placeholder="Search events by name, date, location, or keyword..." aria-label="Search upcoming events">
+        </label>
         <div id="featuredEmpty" class="featured-empty">
           <div class="empty-symbol">✦</div>
           <h3>Your next great memory starts here</h3>
-          <p>No events have been added yet. Add an event to get the calendar started.</p>
+          <p>No upcoming events yet. Add an event to get the calendar started.</p>
           <button class="primary-button" id="addFirstEvent">＋ Add your first event</button>
         </div>
         <div id="dashboardEvents" class="event-grid"></div>
-      </section>
 
-      <section id="events" class="view" hidden>
-        <div class="page-heading">
-          <div><p class="eyebrow">WHAT'S HAPPENING</p><h1>All Events</h1><p class="muted">Browse upcoming activities and community events.</p></div>
-          <button class="primary-button" id="addEventPage">＋ Add Event</button>
-        </div>
-        <div class="filters">
-          <label class="search-box"><span>⌕</span><input id="searchInput" type="search" placeholder="Search events..." aria-label="Search events"></label>
-          <select id="categoryFilter" aria-label="Filter by category">
-            <option value="">All categories</option>
-            <option>Community</option><option>Family</option><option>Wellness</option><option>Volunteer</option><option>Holiday</option><option>Other</option>
-          </select>
-        </div>
-        <div id="allEvents" class="event-grid"></div>
-      </section>
-
-      <section id="calendar" class="view" hidden>
-        <div class="page-heading">
-          <div><p class="eyebrow">PLAN AHEAD</p><h1>Event Calendar</h1><p class="muted">See what's coming up throughout the month.</p></div>
-          <button class="primary-button" id="addEventCalendar">＋ Add Event</button>
+        <div class="section-heading calendar-heading">
+          <div><p class="eyebrow">PLAN AHEAD</p><h2>Community Calendar</h2><p class="muted">Browse the month and see what's coming up.</p></div>
+          <button class="text-button" id="todayButton">Today</button>
         </div>
         <div class="calendar-card">
           <div class="calendar-toolbar">
@@ -79,7 +59,23 @@
             <button class="icon-button" id="nextMonth" aria-label="Next month">›</button>
           </div>
           <div class="calendar-grid" id="calendarGrid"></div>
+          <p class="calendar-note">Select an event in the calendar to view it in All Events.</p>
         </div>
+      </section>
+
+      <section id="events" class="view" hidden>
+        <div class="page-heading">
+          <div><p class="eyebrow">WHAT'S HAPPENING</p><h1>All Events</h1><p class="muted">Browse upcoming and past community activities.</p></div>
+          <button class="primary-button" id="addEventPage">＋ Add Event</button>
+        </div>
+        <div class="filters">
+          <label class="search-box"><span aria-hidden="true">⌕</span><input id="searchInput" type="search" placeholder="Search events..." aria-label="Search all events"></label>
+          <select id="categoryFilter" aria-label="Filter by category">
+            <option value="">All categories</option>
+            <option>Community</option><option>Family</option><option>Wellness</option><option>Volunteer</option><option>Holiday</option><option>Other</option>
+          </select>
+        </div>
+        <div id="allEvents" class="event-grid"></div>
       </section>
     </main>
     <footer>M A C H &nbsp; S F R G <span>Building connections. Strengthening community.</span></footer>
@@ -92,16 +88,29 @@
       <label>Event name<input id="eventName" required maxlength="100" placeholder="e.g. Family Fun Day"></label>
       <div class="form-row">
         <label>Date<input id="eventDate" type="date" required></label>
-        <label>Start time<input id="eventTime" type="time"></label>
+        <label>Category<select id="eventCategory"><option>Community</option><option>Family</option><option>Wellness</option><option>Volunteer</option><option>Holiday</option><option>Other</option></select></label>
       </div>
       <div class="form-row">
-        <label>Category<select id="eventCategory"><option>Community</option><option>Family</option><option>Wellness</option><option>Volunteer</option><option>Holiday</option><option>Other</option></select></label>
-        <label>Location<input id="eventLocation" maxlength="120" placeholder="Building / location"></label>
+        <label>Start time<input id="eventTime" type="time"></label>
+        <label>End time <span class="optional">(optional)</span><input id="eventEndTime" type="time"></label>
       </div>
-      <label>Description<textarea id="eventDescription" rows="3" maxlength="1000" placeholder="Share event details..."></textarea></label>
-      <div class="dialog-actions"><button type="button" class="secondary-button" id="cancelDialog">Cancel</button><button type="submit" class="primary-button">Save Event</button></div>
+      <label>Location<input id="eventLocation" maxlength="160" placeholder="Building / location / address"></label>
+      <label>Sign-up link <span class="optional">(optional)</span><input id="eventSignup" type="url" inputmode="url" placeholder="https://example.com/register"></label>
+      <label>Event photo <span class="optional">(optional — JPG, PNG, or WebP)</span>
+        <input id="eventPhoto" type="file" accept="image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp">
+      </label>
+      <div id="photoPreviewWrap" class="photo-preview-wrap" hidden>
+        <img id="photoPreview" alt="Event photo preview">
+        <button type="button" class="small-button delete" id="removePhoto">Remove photo</button>
+      </div>
+      <label>Description<textarea id="eventDescription" rows="3" maxlength="1200" placeholder="Share event details, what to bring, and who is welcome..."></textarea></label>
+      <p class="form-note">Event photos are resized before saving to help keep the app fast.</p>
+      <div id="formError" class="form-error" role="alert" hidden></div>
+      <div class="dialog-actions"><button type="button" class="secondary-button" id="cancelDialog">Cancel</button><button type="submit" class="primary-button" id="saveEventButton">Save Event</button></div>
     </form>
   </dialog>
+
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
   <script src="app.js"></script>
 </body>
 </html>
