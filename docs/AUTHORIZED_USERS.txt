@@ -1,0 +1,13 @@
+MACH SFRG — INITIAL AUTHORIZED USERS
+
+- michael.arthur.mil@health.mil
+- test.user@health.mil
+- Michael.j.arthur2.mil@health.mil
+
+Addresses are normalized to lowercase by the application. The initial list is
+seeded from AUTHORIZED_EMAILS at startup. Administrators can add/remove users
+from the in-app Authorized users panel. Set ADMIN_EMAILS in Render to designate
+at least one administrator; that address must also be in AUTHORIZED_EMAILS.
+
+The application sends one-time PINs by SMTP. Configure SMTP_HOST, SMTP_PORT,
+SMTP_USER, SMTP_PASS, and MAIL_FROM in Render. Do not commit real credentials.
