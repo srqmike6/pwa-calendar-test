@@ -8,7 +8,15 @@
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-  <div class="app-shell">
+  <section id="authScreen" class="auth-screen">
+    <div class="auth-card"><div class="brand-mark">M</div><p class="eyebrow">MACH SFRG · COMMUNITY ACCESS</p><h1 id="authTitle">Welcome</h1><p id="authMessage" class="muted">Sign in or create an account to continue.</p>
+      <form id="authForm"><label>Email address<input id="authEmail" type="email" autocomplete="email" required></label><label>Password<input id="authPassword" type="password" minlength="8" autocomplete="current-password" required></label><button class="primary-button" id="authSubmit" type="submit">Sign In</button></form>
+      <div class="auth-actions"><button class="text-button" id="toggleAuthMode" type="button">Need an account? Sign up</button></div>
+      <div id="accessArea" hidden><hr><h2>Member access</h2><p class="muted">Enter the shared MACH SFRG access code, or request access from an administrator.</p><form id="codeForm"><label>Access code<input id="accessCode" type="password" autocomplete="off" required></label><button class="primary-button" type="submit">Redeem access code</button></form><form id="requestForm"><label>Request a review <span class="optional">(optional message)</span><textarea id="requestMessage" rows="2" maxlength="1000"></textarea></label><button class="secondary-button" type="submit">Request access</button></form></div>
+      <button id="signOutButton" class="text-button" type="button" hidden>Sign out</button><p id="authError" class="form-error" role="alert" hidden></p>
+    </div>
+  </section>
+  <div class="app-shell" id="appShell" hidden>
     <header class="topbar">
       <a class="brand" href="#dashboard" aria-label="MACH SFRG home" data-view-link="dashboard">
         <span class="brand-mark">M</span>
@@ -68,6 +76,7 @@
           <div><p class="eyebrow">WHAT'S HAPPENING</p><h1>All Events</h1><p class="muted">Browse upcoming and past community activities.</p></div>
           <button class="primary-button" id="addEventPage">＋ Add Event</button>
         </div>
+        <div id="adminPanel" class="admin-panel" hidden><h2>Administrator tools</h2><p class="muted">Review requests for MACH SFRG access.</p><div id="accessRequests"></div></div>
         <div class="filters">
           <label class="search-box"><span aria-hidden="true">⌕</span><input id="searchInput" type="search" placeholder="Search events..." aria-label="Search all events"></label>
           <select id="categoryFilter" aria-label="Filter by category">
@@ -111,6 +120,8 @@
   </dialog>
 
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="config.js"></script>
   <script src="app.js"></script>
 </body>
 </html>
