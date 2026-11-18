@@ -69,7 +69,7 @@ begin
   if auth.uid() is null or not public.is_admin() then
     raise exception 'Administrator access required';
   end if;
-  if p_decision not in ('approved', 'denied') then
+  if p_decision is null or p_decision not in ('approved', 'denied') then
     raise exception 'Decision must be approved or denied';
   end if;
 
