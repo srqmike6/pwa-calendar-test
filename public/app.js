@@ -97,7 +97,7 @@ async function handleSession(session) {
   catch(error){showAuth("We couldn't load your member profile. Please try signing out and back in.");authError(error.message);}
 }
 $("toggleAuthMode").addEventListener("click",()=>{
-  signupMode=!signupMode;$("signupDetails").hidden=!signupMode;$("authTitle").textContent=signupMode?"Create your account":"Welcome";
+  signupMode=!signupMode;$("signupDetails").hidden=!signupMode;["firstName","lastName","sectionWorkCenter"].forEach(id=>$(id).required=signupMode);$("authTitle").textContent=signupMode?"Create your account":"Welcome";
   $("authSubmit").textContent=signupMode?"Create Account":"Sign In";
   $("authPassword").autocomplete=signupMode?"new-password":"current-password";
   $("toggleAuthMode").textContent=signupMode?"Already have an account? Sign in":"Need an account? Sign up";
