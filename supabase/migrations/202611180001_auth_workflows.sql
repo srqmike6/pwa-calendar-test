@@ -37,6 +37,9 @@ begin
   if v_user_id is null then
     raise exception 'Authentication required';
   end if;
+  if exists (select 1 from public.member_profiles where id = v_user_id and access_status = 'approved') then
+    raise exception 'Your account already has access';
+  end if;
 
   insert into public.access_requests (user_id, message, status, requested_at, reviewed_at, reviewed_by)
   values (v_user_id, nullif(left(trim(coalesce(p_message, '')), 1000), ''), 'pending', now(), null, null)
