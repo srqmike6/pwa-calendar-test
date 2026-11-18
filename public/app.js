@@ -97,7 +97,7 @@ async function handleSession(session) {
   catch(error){showAuth("We couldn't load your member profile. Please try signing out and back in.");authError(error.message);}
 }
 $("toggleAuthMode").addEventListener("click",()=>{
-  signupMode=!signupMode;$("authTitle").textContent=signupMode?"Create your account":"Welcome";
+  signupMode=!signupMode;$("signupDetails").hidden=!signupMode;$("authTitle").textContent=signupMode?"Create your account":"Welcome";
   $("authSubmit").textContent=signupMode?"Create Account":"Sign In";
   $("authPassword").autocomplete=signupMode?"new-password":"current-password";
   $("toggleAuthMode").textContent=signupMode?"Already have an account? Sign in":"Need an account? Sign up";
@@ -108,7 +108,7 @@ $("authForm").addEventListener("submit",async e=>{
   const email=$("authEmail").value.trim(),password=$("authPassword").value;
   try{
     const result=signupMode
-      ? await db.auth.signUp({email,password,options:{emailRedirectTo:location.origin}})
+      ? await db.auth.signUp({email,password,options:{emailRedirectTo:location.origin,data:{first_name:$("firstName").value.trim(),last_name:$("lastName").value.trim(),section_work_center:$("sectionWorkCenter").value.trim()}}})
       : await db.auth.signInWithPassword({email,password});
     if(result.error) throw result.error;
     if(signupMode&&!result.data.session){
@@ -141,7 +141,18 @@ $("requestForm").addEventListener("submit",async e=>{
 async function loadAccessRequests(){
   const {data,error}=await db.from("access_requests").select("id,user_id,message,status,requested_at").eq("status","pending").order("requested_at");
   if(error)throw error;
-  $("accessRequests").innerHTML=data?.length?data.map(r=>`<div class="admin-request"><div><strong>${escapeHTML(r.user_id)}</strong><p>${escapeHTML(r.message||"No message provided")}</p></div><div class="admin-request-actions"><button class="small-button" data-action="review-approve" data-id="${r.id}">Approve</button><button class="small-button delete" data-action="review-deny" data-id="${r.id}">Decline</button></div></div>`).join(""):"<p class='muted'>No pending access requests.</p>";
+  const userIds=(data||[]).map(r=>r.user_id);
+  let profilesById={};
+  if(userIds.length){
+    const {data:members,error:profileError}=await db.from("member_profiles").select("id,email,first_name,last_name,section_work_center").in("id",userIds);
+    if(profileError)throw profileError;
+    profilesById=Object.fromEntries((members||[]).map(p=>[p.id,p]));
+  }
+  $("accessRequests").innerHTML=data?.length?data.map(r=>{
+    const p=profilesById[r.user_id]||{};
+    const name=[p.first_name,p.last_name].filter(Boolean).join(" ")||"Name not provided";
+    return `<div class="admin-request"><div><strong>${escapeHTML(name)}</strong><p><b>Section / Work Center:</b> ${escapeHTML(p.section_work_center||"Not provided")}</p><p><b>Email:</b> ${escapeHTML(p.email||"Unavailable")}</p><p>${escapeHTML(r.message||"No message provided")}</p></div><div class="admin-request-actions"><button class="small-button" data-action="review-approve" data-id="${r.id}">Approve</button><button class="small-button delete" data-action="review-deny" data-id="${r.id}">Decline</button></div></div>`;
+  }).join():"<p class='muted'>No pending access requests.</p>";
 }
 async function reviewRequest(id,decision){
   const {error}=await db.rpc("review_access_request",{p_request_id:id,p_decision:decision});
