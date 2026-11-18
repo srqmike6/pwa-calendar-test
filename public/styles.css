@@ -23,3 +23,6 @@ dialog{border:0;border-radius:14px;padding:0;width:min(620px,calc(100% - 28px));
 .admin-request{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:12px 0;border-top:1px solid #e5ebf0}
 .admin-request-actions{display:flex;gap:8px}
 @media(max-width:600px){.auth-card{padding:24px}.admin-request{align-items:flex-start;flex-direction:column}}
+
+/* Respect the HTML hidden attribute even when component styles set display. */
+[hidden]{display:none!important}
