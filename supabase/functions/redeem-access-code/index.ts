@@ -36,7 +36,7 @@ Deno.serve(async (req) => {
       return Response.json({ error: "Your session could not be verified. Please sign in again." }, { status: 401, headers: corsHeaders });
     }
 
-    const body = await req.json();
+    if (!user.email_confirmed_at) {\n      return Response.json({ error: "Confirm your email address before redeeming the access code." }, { status: 403, headers: corsHeaders });\n    }\n\n    const body = await req.json();
     const submittedCode = typeof body.code === "string" ? body.code.trim() : "";
     if (!submittedCode || submittedCode !== expectedCode) {
       return Response.json({ error: "That access code wasn't recognized. Check it and try again." }, { status: 400, headers: corsHeaders });
